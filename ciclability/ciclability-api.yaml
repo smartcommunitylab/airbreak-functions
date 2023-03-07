@@ -1,0 +1,56 @@
+metadata:
+  name: clicabilita-api
+  labels:
+    nuclio.io/project-name: airbreak
+  resourceVersion: "295019858"
+spec:
+  description: "Ciclabilita index API"
+  handler: "ciclability-api:handler"
+  runtime: "python:3.9"
+  env:
+    - name: S3_ENDPOINT
+      value: ""
+    - name: S3_ACCESS_KEY
+      value: ""
+    - name: S3_SECRET_KEY
+      value: ""
+    - name: S3_BUCKET
+      value: ""
+  resources:
+    requests:
+      memory: 128Mi
+  imageHash: "1678201814176612796"
+  minReplicas: 1
+  maxReplicas: 1
+  triggers:
+    default-http:
+      class: ""
+      kind: http
+      name: default-http
+      maxWorkers: 1
+      attributes:
+        serviceType: ClusterIP
+  version: -1
+  alias: latest
+  build:
+    path: "https://github.com/smartcommunitylab/airbreak-functions"
+    functionSourceCode: ZnJvbSBkYXRldGltZSBpbXBvcnQgZGF0ZXRpbWUKCmltcG9ydCBpbwoKaW1wb3J0IG9zCmltcG9ydCBib3RvMwppbXBvcnQgYm90b2NvcmUKZnJvbSBib3RvY29yZS5jbGllbnQgaW1wb3J0IENvbmZpZwoKUzNfRU5EUE9JTlQgPSBvcy5lbnZpcm9uWydTM19FTkRQT0lOVCddClMzX0FDQ0VTU19LRVkgPSBvcy5lbnZpcm9uWydTM19BQ0NFU1NfS0VZJ10KUzNfU0VDUkVUX0tFWSA9IG9zLmVudmlyb25bJ1MzX1NFQ1JFVF9LRVknXQpTM19CVUNLRVQgPSBvcy5lbnZpcm9uWydTM19CVUNLRVQnXQoKREFZUyA9IFsnMS1MVU4nLCAnMi1NQVInLCAnMy1NRVInLCAnNC1HSU8nLCAnNS1WRU4nLCAnNi1TQUInLCAnNy1ET00nXQoKZGVmIGRhdGVfc2VsZWN0aW9uKHN0cik6CiAgICBkYXRldGltZV9vYmplY3QgPSBkYXRldGltZS5zdHJwdGltZShzdHIsICclWS0lbS0lZCcpCiAgICByZXR1cm4gREFZU1tkYXRldGltZV9vYmplY3Qud2Vla2RheSgpXQoKZGVmIGhhbmRsZXIoY29udGV4dCwgZXZlbnQpOgogICAgZHQgPSBkYXRldGltZS5ub3coKSBpZiBldmVudC5wYXRoID09ICcnIG9yIGV2ZW50LnBhdGggPT0gJy8nIGVsc2UgZGF0ZXRpbWUuc3RycHRpbWUoZXZlbnQucGF0aCwgJy8lWS0lbS0lZCcpCgogICAgIyBpbml0IGNsaWVudAogICAgczMgPSBib3RvMy5jbGllbnQoJ3MzJywKICAgICAgICAgICAgICAgICAgICAgIGVuZHBvaW50X3VybD1TM19FTkRQT0lOVCwKICAgICAgICAgICAgICAgICAgICAgIGF3c19hY2Nlc3Nfa2V5X2lkPVMzX0FDQ0VTU19LRVksCiAgICAgICAgICAgICAgICAgICAgICBhd3Nfc2VjcmV0X2FjY2Vzc19rZXk9UzNfU0VDUkVUX0tFWSwKICAgICAgICAgICAgICAgICAgICAgIGNvbmZpZz1Db25maWcoc2lnbmF0dXJlX3ZlcnNpb249J3MzdjQnKSwKICAgICAgICAgICAgICAgICAgICAgIHJlZ2lvbl9uYW1lPSd1cy1lYXN0LTEnKQoKICAgIERBVEVfU0VMRUNUSU9OID0gZGF0ZV9zZWxlY3Rpb24oZHQuc3RyZnRpbWUoJyVZLSVtLSVkJykpCiAgICBvYmogPSBOb25lCiAgICB0cnk6CiAgICAgICAgb2JqID0gczMuZ2V0X29iamVjdChCdWNrZXQ9UzNfQlVDS0VULCBLZXk9J2RhdGEve30uZ2VvanNvbicuZm9ybWF0KGR0LnN0cmZ0aW1lKCclWS0lbS0lZCcpKSkKICAgIGV4Y2VwdDoKICAgICAgICB0cnk6CiAgICAgICAgICAgIG9iaiA9IHMzLmdldF9vYmplY3QoQnVja2V0PVMzX0JVQ0tFVCwgS2V5PSdkYXRhL3t9Lmdlb2pzb24nLmZvcm1hdChEQVRFX1NFTEVDVElPTikpCiAgICAgICAgZXhjZXB0OgogICAgICAgICAgICByZXR1cm4ge30KICAgIAogICAgcmV0dXJuIG9ialsnQm9keSddLnJlYWQoKQo=
+    baseImage: "python:3.9"
+    commands:
+      - 'pip install boto3'
+    runtimeAttributes:
+      repositories: []
+    codeEntryType: github
+    codeEntryAttributes:
+      branch: main
+      headers:
+        Authorization: ""
+      workDir: ciclability/ciclability-api.py
+    timestamp: 1678201864
+  imagePullSecrets: registry-credentials
+  loggerSinks:
+    - level: debug
+  platform: {}
+  securityContext: {}
+  eventTimeout: ""
+  preemptionMode: none

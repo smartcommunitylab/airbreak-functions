@@ -15,6 +15,10 @@ from botocore.client import Config
 from scipy.spatial import cKDTree
 from shapely.geometry import Point
 
+######
+from shapely.ops import transform
+######
+
 import zipfile
 
 from owslib.wfs import WebFeatureService
@@ -28,23 +32,6 @@ S3_BUCKET = os.environ['S3_BUCKET']
 
 DAYS = ['1-LUN', '2-MAR', '3-MER', '4-GIO', '5-VEN', '6-SAB', '7-DOM']
 
-# a function to compute hte CKD nearests points to map the two networks 
-def ckdnearest(gdA, gdB):
-
-    nA = np.array(list(gdA.geometry.apply(lambda x: (x.x, x.y))))
-    nB = np.array(list(gdB.geometry.apply(lambda x: (x.x, x.y))))
-    btree = cKDTree(nB)
-    dist, idx = btree.query(nA, k=1)
-    gdB_nearest = gdB.iloc[idx].drop(columns="geometry").reset_index(drop=True)
-    gdf = pd.concat(
-        [
-            gdA.reset_index(drop=True),
-            gdB_nearest,
-            pd.Series(dist, name='dist')
-        ], 
-        axis=1)
-
-    return gdf
 
 def date_selection(str):
     datetime_object = datetime.strptime(str, '%Y-%m-%d')
@@ -75,10 +62,6 @@ def handler(context, event):
     # compute the centroid of the geometry
     lst['centroid'] = lst['geometry'].centroid
 
-    # compute the centroid of the LTS geometries 
-    lst.drop(columns=['geometry'], inplace=True)
-    lst.rename(columns={'centroid':'geometry'}, inplace=True)
-
     # define server connection
     wfs = WebFeatureService(url='https://sit.comune.fe.it/geoserversit/wfs', username=GIS_USERNAME, 
                          password=GIS_PASSWORD, version='2.0.0')
@@ -104,20 +87,60 @@ def handler(context, event):
     # select only the necessary data 
     pg_bike_subset = pg_bike[pg_bike['periodo'] == DATE_SELECTION]
 
+    ######
+    def flip(x, y):
+        """Flips the x and y coordinate values"""
+        return y, x
+
+    # flip coordinates since they are swapped in the data
+    #pg_bike_subset.geometry = pg_bike_subset.geometry.apply(lambda x: transform(flip, x))
+    ######
     # computing the centroids is necessary to efficently map the 
     # the bike network with the LTS network. 
     # compute the centroid of the bike geometries
     pg_bike_subset['centroid'] = pg_bike_subset['geometry'].centroid
     pg_bike_subset.drop(columns=['geometry'], inplace=True)
     pg_bike_subset.rename(columns={'centroid':'geometry'}, inplace=True)
+    # compute the centroid of the LTS geometries
+    ########
+    # lst.drop(columns=['geometry'], inplace=True)
+    lst.rename(columns={'geometry':'geometry_line'}, inplace=True)
+    ########
+    lst.rename(columns={'centroid':'geometry'}, inplace=True)
+    # context.logger.info('fetch data for city '+lst.head())
+    # lst.set_geometry('geometry')
+
+    # a function to compute hte CKD nearests points to map the two networks 
+    def ckdnearest(gdA, gdB):
+
+        nA = np.array(list(gdA.geometry.apply(lambda x: (x.x, x.y))))
+        nB = np.array(list(gdB.geometry.apply(lambda x: (x.x, x.y))))
+        btree = cKDTree(nB)
+        dist, idx = btree.query(nA, k=1)
+        gdB_nearest = gdB.iloc[idx].drop(columns="geometry").reset_index(drop=True)
+        gdf = pd.concat(
+            [
+                gdA.reset_index(drop=True),
+                gdB_nearest,
+                pd.Series(dist, name='dist')
+            ], 
+            axis=1)
+
+        return gdf
+
     # map the bike network and the LTS network 
     mapping = ckdnearest(pg_bike_subset, lst)
 
     # now we can compute the priorities
     mapping['priority'] = mapping['class'] * mapping['num_totale']
-    mapping = mapping.drop(columns=['periodo','num_totale','num_medio_','nome_segme','id','class','dist'])
+    ########
+    mapping = mapping.drop(columns=['periodo','num_totale','geometry','num_medio_','nome_segme','id','class','dist'])
+    mapping.rename(columns={'geometry_line':'geometry'}, inplace=True)
+    # flip coordinates since they are swapped in the data
+    #mapping.geometry = mapping.geometry.apply(lambda x: transform(flip, x))
+    ########
+    mapping
     # finally, we save the geojson file
-
     bytes = io.BytesIO()
     mapping.to_file(bytes, driver='GeoJSON')
     bytes.seek(0)

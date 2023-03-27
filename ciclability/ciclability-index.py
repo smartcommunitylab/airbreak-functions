@@ -93,7 +93,7 @@ def handler(context, event):
         return y, x
 
     # flip coordinates since they are swapped in the data
-    #pg_bike_subset.geometry = pg_bike_subset.geometry.apply(lambda x: transform(flip, x))
+    pg_bike_subset.geometry = pg_bike_subset.geometry.apply(lambda x: transform(flip, x))
     ######
     # computing the centroids is necessary to efficently map the 
     # the bike network with the LTS network. 

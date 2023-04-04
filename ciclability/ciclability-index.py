@@ -66,6 +66,7 @@ def handler(context, event):
     wfs = WebFeatureService(url='https://sit.comune.fe.it/geoserversit/wfs', username=GIS_USERNAME, 
                          password=GIS_PASSWORD, version='2.0.0')
     BASE_PATH = '/data/'
+    BASE_SIM_PATH = '/data/'
     DATE_SELECTION = date_selection(datetime.now().strftime('%Y-%m-%d'))
 
     # retrieve data from the server and save them into BASE_PATH
@@ -95,6 +96,26 @@ def handler(context, event):
     # flip coordinates since they are swapped in the data
     pg_bike_subset.geometry = pg_bike_subset.geometry.apply(lambda x: transform(flip, x))
     ######
+
+    # mapping all the possible traffic data (we have more entries in bike data than traffic data) 
+    # obj = s3.get_object(Bucket=S3_BUCKET, Key='data/simulazione_traffico.zip')
+    # dataio = io.BytesIO(obj['Body'].read())
+    # # zipped = zipfile.ZipFile(dataio)
+    # out = open(BASE_SIM_PATH+'simulazione_traffico.zip', 'wb')
+    # out.write(dataio)
+    # out.close()
+    s3.download_file(S3_BUCKET, 'data/simulazione_traffico.zip', BASE_SIM_PATH + 'simulazione_traffico.zip')
+    # unzip the files downloaded and read the shapefile
+    with zipfile.ZipFile(BASE_SIM_PATH+'simulazione_traffico.zip',"r") as zip_ref:
+        zip_ref.extractall(BASE_SIM_PATH)
+
+    traffic_data = gpd.read_file(BASE_SIM_PATH + 'simulazione_traffico/Stima_flussi_di_traffico.shp')
+    traffic_data = traffic_data[['TOTALE_VEI', 'geometry']]
+    traffic_data = traffic_data.to_crs('epsg:4326')
+    pg_bike_subset = gpd.sjoin(pg_bike_subset, traffic_data, how='left', op='intersects')
+    pg_bike_subset.drop(columns='index_right', inplace=True)
+    pg_bike_subset.TOTALE_VEI.fillna(0,inplace=True)
+
     # computing the centroids is necessary to efficently map the 
     # the bike network with the LTS network. 
     # compute the centroid of the bike geometries
@@ -131,15 +152,31 @@ def handler(context, event):
     # map the bike network and the LTS network 
     mapping = ckdnearest(pg_bike_subset, lst)
 
-    # now we can compute the priorities
-    mapping['priority'] = mapping['class'] * mapping['num_totale']
-    ########
-    mapping = mapping.drop(columns=['periodo','num_totale','geometry','num_medio_','nome_segme','id','class','dist'])
-    mapping.rename(columns={'geometry_line':'geometry'}, inplace=True)
+    # integration and normalizing traffic (4.4.2-p20)
+    mapping['ILTS'] = mapping['TOTALE_VEI'] * mapping['class']
+
+    max_traffic = mapping['ILTS'].max()
+    min_traffic = mapping['ILTS'].min()
+    mapping['ILTS'] = (mapping['ILTS']-min_traffic)/(max_traffic-min_traffic)
+
+    # computing the final policy score 
+    mapping['final_score'] = np.log(mapping['num_totale']) * mapping['ILTS']
+
+    mapping = mapping[['id_segment', 'geometry_line', 'final_score']]
+    mapping.rename(columns={'geometry_line':'geometry', 'final_score': 'priority'}, inplace=True)
+
+    ## now we can compute the priorities
+    #mapping['priority'] = mapping['class'] * mapping['num_totale']
+    #########
+    #mapping = mapping.drop(columns=['periodo','num_totale','geometry','num_medio_','nome_segme','id','class','dist'])
+    #mapping.rename(columns={'geometry_line':'geometry'}, inplace=True)
     # flip coordinates since they are swapped in the data
     #mapping.geometry = mapping.geometry.apply(lambda x: transform(flip, x))
     ########
-    mapping
+    #mapping
+
+    mapping = gpd.GeoDataFrame(mapping)
+    
     # finally, we save the geojson file
     bytes = io.BytesIO()
     mapping.to_file(bytes, driver='GeoJSON')

@@ -1,0 +1,72 @@
+metadata:
+  name: waypoints
+  labels:
+    nuclio.io/project-name: airbreak
+  resourceVersion: "319869207"
+spec:
+  handler: Handler
+  runtime: java
+  env:
+    - name: S3_BUCKET
+      value: 
+    - name: MONGO_URI
+      value: ""
+    - name: S3_USERNAME
+      value: 
+    - name: S3_PASSWORD
+      value: 
+    - name: S3_ENDPOINT
+      value: ""
+    - name: CAMPAIGN_ID
+      value: 
+    - name: SECRET_KEY_1
+      value: ""
+    - name: SECRET_KEY_2
+      value: 
+  resources:
+    limits:
+      memory: 1024M
+    requests:
+      memory: 512M
+  imageHash: "1681311407991499852"
+  triggers:
+    daily:
+      class: ""
+      kind: cron
+      name: daily
+      maxWorkers: 1
+      attributes:
+        schedule: "0 0 4 * * *"
+    default-http:
+      class: ""
+      kind: http
+      name: default-http
+      maxWorkers: 1
+      attributes:
+        serviceType: ClusterIP
+  version: -1
+  alias: latest
+  build:
+    noCache: true
+    dependencies:
+      - 'group: org.apache.commons, name: commons-lang3, version: 3.12.0'
+      - 'group: org.mongodb, name: mongodb-driver-sync, version: 4.4.2'
+      - 'group: org.springframework.data, name: spring-data-mongodb, version: 3.3.5'
+      - 'group: io.minio, name: minio, version: 8.5.2'
+      - 'group: com.fasterxml.jackson.dataformat, name: jackson-dataformat-csv, version: 2.13.3'
+      - 'group: commons-codec, name: commons-codec, version: 1.15'
+    runtimeAttributes:
+      repositories: []
+    codeEntryType: sourceCode
+    timestamp: 1681311468
+    image: ""
+    offline: false
+  imagePullSecrets: registry-credentials
+  loggerSinks:
+    - level: debug
+  platform: {}
+  readinessTimeoutSeconds: 120
+  securityContext: {}
+  eventTimeout: ""
+  preemptionMode: none
+  waitReadinessTimeoutBeforeFailure: false

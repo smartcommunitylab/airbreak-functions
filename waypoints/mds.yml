@@ -1,0 +1,46 @@
+metadata:
+  name: waypoints-mds
+  labels:
+    nuclio.io/project-name: airbreak
+  resourceVersion: "321235037"
+spec:
+  handler: Handler
+  runtime: java
+  env:
+    - name: MONGO_URI
+      value: ""
+    - name: TOKEN
+      value: 
+  resources: {}
+  imageHash: "1681481653897399142"
+  triggers:
+    default-http:
+      class: ""
+      kind: http
+      name: default-http
+      maxWorkers: 1
+      attributes:
+        serviceType: ClusterIP
+  version: -1
+  alias: latest
+  build:
+    dependencies:
+      - 'group: org.apache.commons, name: commons-lang3, version: 3.12.0'
+      - 'group: org.mongodb, name: mongodb-driver-sync, version: 4.4.2'
+      - 'group: org.springframework.data, name: spring-data-mongodb, version: 3.3.5'
+      - 'group: com.fasterxml.jackson.dataformat, name: jackson-dataformat-csv, version: 2.13.3'
+    runtimeAttributes:
+      repositories: []
+    codeEntryType: sourceCode
+    timestamp: 1681481694
+    image: ""
+    noCache: false
+    offline: false
+  imagePullSecrets: registry-credentials
+  loggerSinks:
+    - level: debug
+  platform: {}
+  securityContext: {}
+  eventTimeout: ""
+  preemptionMode: none
+  waitReadinessTimeoutBeforeFailure: false

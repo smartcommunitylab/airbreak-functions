@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import io
+import nuclio_sdk
 
 import os
 import boto3
@@ -12,14 +13,8 @@ S3_ACCESS_KEY = os.environ['S3_ACCESS_KEY']
 S3_SECRET_KEY = os.environ['S3_SECRET_KEY']
 S3_BUCKET = os.environ['S3_BUCKET']
 
-DAYS = ['1-LUN', '2-MAR', '3-MER', '4-GIO', '5-VEN', '6-SAB', '7-DOM']
-
-def date_selection(str):
-    datetime_object = datetime.strptime(str, '%Y-%m-%d')
-    return DAYS[datetime_object.weekday()]
-
 def handler(context, event):
-    dt = datetime.now() if event.path == '' or event.path == '/' else datetime.strptime(event.path, '/%Y-%m-%d')
+    dt = 'COMPLESSIVO' if event.path == '' or event.path == '/' else datetime.strptime(event.path, '/%Y-%m').strftime('%Y-%m')
 
     # init client
     s3 = boto3.client('s3',
@@ -29,14 +24,19 @@ def handler(context, event):
                       config=Config(signature_version='s3v4'),
                       region_name='us-east-1')
 
-    DATE_SELECTION = date_selection(dt.strftime('%Y-%m-%d'))
+    DATE_SELECTION = dt
     obj = None
     try:
-        obj = s3.get_object(Bucket=S3_BUCKET, Key='data/{}.geojson'.format(dt.strftime('%Y-%m-%d')))
+        obj = s3.get_object(Bucket=S3_BUCKET, Key='data/{}.geojson'.format(DATE_SELECTION))
     except:
         try:
-            obj = s3.get_object(Bucket=S3_BUCKET, Key='data/{}.geojson'.format(DATE_SELECTION))
+            obj = s3.get_object(Bucket=S3_BUCKET, Key='data/{}.geojson'.format('COMPLESSIVO'))
         except:
             return {}
     
-    return obj['Body'].read()
+    #obj['Body'].read()
+    response = nuclio_sdk.Response()
+    response.status_code = 200
+    response.body = obj['Body'].read()
+    response.content_type='application/json'
+    return response

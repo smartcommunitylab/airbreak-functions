@@ -35,7 +35,7 @@ S3_BUCKET = os.environ['S3_BUCKET']
 def process(DATE_SELECTION):
     # define server connection
     wfs = WebFeatureService(url='https://sit.comune.fe.it/geoserversit/wfs', username=GIS_USERNAME, 
-                         password=GIS_PASSWORD, version='2.0.0')
+                         password=GIS_PASSWORD, version='2.0.0', timeout=120)
                          
     BASE_PATH = '/data/'
     BASE_SIM_PATH = '/data/'
@@ -151,7 +151,7 @@ def process(DATE_SELECTION):
     mapping = mapping[['id_segment', 'geometry_line', 'final_score']]
     mapping.rename(columns={'geometry_line':'geometry', 'final_score': 'priority'}, inplace=True)
 
-    mapping = mapping.sort_values('final_score', ascending=False)
+    # mapping = mapping.sort_values('final_score', ascending=False)
     mapping = mapping.drop_duplicates()
 
     mapping = gpd.GeoDataFrame(mapping)
